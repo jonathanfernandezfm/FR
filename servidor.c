@@ -13,8 +13,12 @@
 
 int main(int argc, char** argv) {
     int socket_control, from_len, socket_datos;
+    int nbytes;
     struct sockaddr_in from, sockname;
     char buffer[82];
+    char optionMenu[128] = "**********************\n - NEW USER * PASS *\n - LOGIN * PASS *\n - EXIT\n**********************\n";
+    char gameMenu[128] = "**********************\n - GET SCORE\n - NEW WORD\n - EXIT\n**********************\n";
+    char playingMenu[128] = "**********************\n - WORD *\n - RESOLVE\n - NEW WORD\n - EXIT\n**********************\n";
     int salir = 0;
 
     if(argc != 2)
@@ -46,8 +50,12 @@ int main(int argc, char** argv) {
             perror("Servidor: error en la llamada a al funcion accept"),
             exit(1);
 
+        if(send(socket_datos, optionMenu, 128, 0) == -1)
+            perror("Cliente: error en la llamada a la funcion send"),
+            exit(1);
+        printf("Conexión establecida. Option Menu\n");
         do{
-            int nbytes = recv(socket_datos, buffer, 80, 0);
+            nbytes = recv(socket_datos, buffer, 80, 0);
             if(nbytes == -1)
                 perror("Servidor: error Recv"),
                 exit(1);
