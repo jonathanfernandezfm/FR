@@ -17,11 +17,14 @@
 int main(int argc, char** argv) {
     int socket_datos;
     int nbytes;
+    int salir=0;
+    char confirmacion;
     struct sockaddr_in sockname;
     char buffer[128];
     char option[64];
     char * user;
     char * pass;
+
 
     char delimiters[] = " ";
     char * processing;
@@ -63,15 +66,14 @@ int main(int argc, char** argv) {
 
     nbytes = recv(socket_datos, buffer, 128, 0);
     if(nbytes == -1)
-        perror("Servidor: error Recv"),
+        perror("Cliente: error Recv (Option Menu)"),
         exit(1);
     
     printf(buffer);
     
     do{
-        printf("Elija una opcion\n");
+        printf("Elija una opcion: ");
         gets(option);
-        //printf("%s", option);
         
         processing = option;
         token = strsep(&processing, delimiters);
@@ -80,38 +82,148 @@ int main(int argc, char** argv) {
             token = strsep(&processing, delimiters); 
             if(token != 0){
                 user = token;
-                printf("User: %s\n", user);
                 token = strsep(&processing, delimiters);
                 if(token != 0){
                     if(strcmp(token, "PASS") == 0){
                         token = strsep(&processing, delimiters);
                         if(token != 0){
                             pass = token;
-                            printf("Pass: %s\n", token);
+                            strcpy(buffer, "LOGIN ");
+                            strcat(buffer, user);
+                            strcat(buffer, " ");
+                            strcat(buffer, pass);
+
+                            if(send(socket_datos, buffer, 128, 0) == -1)
+                                perror("Cliente: error en la llamada a la funcion send (LOGIN)"),
+                                exit(1);
+
+                            nbytes = recv(socket_datos, buffer, 20, 0);
+                            if(nbytes == -1)
+                                perror("Cliente: error Recv (Confirmacion)"),
+                                exit(1);
+                            
+                            printf("\n");
+
+                            if(strcmp(buffer, "OK") == 0){
+                                printf("Login correcto.\n");
+                                salir = 1;
+                            }else{
+                                printf("Login incorrecto.\n");
+                            }
                         }
                     }
                 }
             }
+
         }else if(strcmp(token, "NEW") == 0){
-            
+            token = strsep(&processing, delimiters);
+            if(token != 0){
+                if(strcmp(token, "USER") == 0){
+                    token = strsep(&processing, delimiters);
+                    if(token != 0){
+                        user = token;
+                        token = strsep(&processing, delimiters);
+                        if(token != 0){
+                            if(strcmp(token, "PASS") == 0){
+                                token = strsep(&processing, delimiters);
+                                if(token != 0){
+                                    pass = token;
+                                    strcpy(buffer, "NEW ");
+                                    strcat(buffer, user);
+                                    strcat(buffer, " ");
+                                    strcat(buffer, pass);
+        
+                                    if(send(socket_datos, buffer, 128, 0) == -1)
+                                        perror("Cliente: error en la llamada a la funcion send (NEW USER)"),
+                                        exit(1);
+                                       
+                                    nbytes = recv(socket_datos, buffer, 20, 0);
+                                    if(nbytes == -1)
+                                        perror("Cliente: error Recv (Confirmacion)"),
+                                        exit(1);
+                                    
+                                    printf("\n");
+
+                                    if(strcmp(buffer, "OK") == 0){
+                                        printf("Creación correcta. Estas conectado.\n");
+                                        salir = 1;
+                                    }else{
+                                        printf("Creacion de cliente incorrecta.\n");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
         }else if(strcmp(token, "EXIT") == 0){
+            strcpy(buffer, "EXIT");
 
+            if(send(socket_datos, buffer, 128, 0) == -1)
+                perror("Cliente: error en la llamada a la funcion send (EXIT)"),
+                exit(1);
+                
+            close(socket_datos);
+                
+            exit(0);
         }
-    }while(1);
-
+    }while(!salir);    
+    salir=0;
     
+    nbytes = recv(socket_datos, buffer, 128, 0);
+    if(nbytes == -1)
+        perror("Cliente: error Recv"),
+        exit(1);
     
-
+    printf("\n%s", buffer);
+    
     do{
-        printf("Teclee el mensaje a transmitir: \n");
-        gets(buffer);
+        printf("Elija una opcion: ");
+        gets(option);
+        
+        processing = option;
+        token = strsep(&processing, delimiters);
 
-        printf("Has tecleado: %s\n", buffer);
+        if(strcmp(token, "GET") == 0){
+            token = strsep(&processing, delimiters);
+            if(token != 0){
+                if(strcmp(token, "SCORE") == 0){
+                    strcpy(buffer, "SCORE");
+                    if(send(socket_datos, buffer, 128, 0) == -1)
+                        perror("Cliente: error en la llamada a la funcion send (GET SCORE)"),
+                        exit(1);
+                }
+            }
+        }else if(strcmp(token, "NEW") == 0){
+            token = strsep(&processing, delimiters);
+            if(token != 0){
+                if(strcmp(token, "WORD") == 0){
+                    strcpy(buffer, "WORD");
+                    if(send(socket_datos, buffer, 128, 0) == -1)
+                        perror("Cliente: error en la llamada a la funcion send (NEW WORD)"),
+                        exit(1);
+                }
+            }
+        }else if(strcmp(token, "EXIT") == 0){
+            close(socket_datos);
+            exit(0);
+        }
+    }while(!salir);
 
-        if(send(socket_datos, buffer, 80, 0) == -1)
-            perror("Cliente: error en la llamada a la funcion send"),
-            exit(1);
-    }while(strcmp(buffer, "FIN") != 0);
+
+
+    //do{
+    //    printf("Teclee el mensaje a transmitir: \n");
+    //    gets(buffer);
+
+    //    printf("Has tecleado: %s\n", buffer);
+
+    //    if(send(socket_datos, buffer, 128, 0) == -1)
+    //        perror("Cliente: error en la llamada a la funcion send"),
+    //        exit(1);
+
+    //}while(strcmp(buffer, "FIN") != 0);
 
     close(socket_datos);
 
