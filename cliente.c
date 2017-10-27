@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
                                 printf("Login correcto.\n");
                                 salir = 1;
                             }else{
-                                printf("Login incorrecto.\n");
+                                printf("Login incorrecto.\n\n");
                             }
                         }
                     }
