@@ -25,6 +25,15 @@ int main(int argc, char** argv) {
     char * user;
     char * pass;
     int salir = 0;
+    int correcto = 0;
+
+    FILE *users;
+    char line[100];
+    int endof = 1;
+    if ((users = fopen("users.txt","r")) == NULL){
+        printf("Error! opening file");
+        exit(1);
+    }
 
     char delimiters[] = " ";
     char * processing;
@@ -82,20 +91,58 @@ int main(int argc, char** argv) {
                 user = token;
                 token = strsep(&processing, delimiters);
                 pass = token;
-                // IMPLEMENTACION FICHERO
-                strcpy(confirmacion, "OK"); // SI ES CORRECTO
-                printf("Login correcto. Game Menu");
-                if(send(socket_datos, confirmacion, 20, 0) == -1)
-                    perror("Servidor: error en la llamada a la funcion send (Confirmación LOGIN)"),
-                    exit(1);
-                salir = 1;
+                
+                do {
+                    fgets(line, 100, (FILE *) users);
+
+                    processing = line;
+                    token = strsep(&processing, delimiters);
+                    
+                    if(strcmp(user, token) == 0){
+                        token = strsep(&processing, delimiters);
+                        if(token != 0){
+                            if(feof(users) == 0){
+                                strcat(pass, "\n");
+                            }
+                            if(strcmp(pass, token) == 0){
+                                correcto = 1;
+                            }else{
+
+                            }
+                        }
+                    }else{
+
+                    }
+                }while(feof(users) == 0 && !correcto);
+
+                if(correcto){
+                    strcpy(confirmacion, "OK"); // SI ES CORRECTO
+                    printf("Login correcto. Game Menu");
+                    if(send(socket_datos, confirmacion, 20, 0) == -1)
+                        perror("Servidor: error en la llamada a la funcion send (Confirmación LOGIN)"),
+                        exit(1);
+                    salir = 1;
+                }else{
+                    strcpy(confirmacion, "ERR"); // SI NO ES CORRECTO
+                    printf("Login incorrecto.");
+                    if(send(socket_datos, confirmacion, 20, 0) == -1)
+                        perror("Servidor: error en la llamada a la funcion send (Confirmación LOGIN)"),
+                        exit(1);
+                    rewind(users);
+                }
+                
 
             }else if(strcmp(token, "NEW") == 0){
                 token = strsep(&processing, delimiters);
                 user = token;
                 token = strsep(&processing, delimiters);
                 pass = token;
-                // IMPLEMENTACION FICHERO
+                
+                do {
+                    endof =(int) fgets(line, 100, (FILE *) users);
+                    printf("%s %i\n", line, endof);
+                }while(endof != 0);
+
                 strcpy(confirmacion, "OK"); // AÑADIR USUARIO SI ES CORRECTO
                 printf("Creacion correcta. Game Menu");                
                 if(send(socket_datos, confirmacion, 20, 0) == -1)
