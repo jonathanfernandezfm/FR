@@ -29,11 +29,6 @@ int main(int argc, char** argv) {
 
     FILE *users;
     char line[100];
-    int endof = 1;
-    if ((users = fopen("users.txt","r")) == NULL){
-        printf("Error! opening file");
-        exit(1);
-    }
 
     char delimiters[] = " ";
     char * processing;
@@ -68,12 +63,15 @@ int main(int argc, char** argv) {
             perror("Servidor: error en la llamada a al funcion accept"),
             exit(1);
 
+        // OPTION MENU
         if(send(socket_datos, optionMenu, 128, 0) == -1)
             perror("Servidor: error en la llamada a la funcion send"),
             exit(1);
         printf("Conexión establecida. Option Menu\n");
 
+        // PRIMER ESTADO
         do{
+            // SELECTED OPTION
             nbytes = recv(socket_datos, buffer, 128, 0);
             if(nbytes == -1)
                 perror("Servidor: error Recv (Option Selected)"),
@@ -85,13 +83,19 @@ int main(int argc, char** argv) {
 
             processing = buffer;
             token = strsep(&processing, delimiters);
-    
+            
+            // SI ESTAMOS INTENTANDO HACER LOGIN
             if(strcmp(token, "LOGIN") == 0){
                 token = strsep(&processing, delimiters); 
                 user = token;
                 token = strsep(&processing, delimiters);
                 pass = token;
                 
+                if ((users = fopen("users.txt","r")) == NULL){
+                    printf("Error! opening file");
+                    exit(1);
+                }
+
                 do {
                     fgets(line, 100, (FILE *) users);
 
@@ -107,11 +111,11 @@ int main(int argc, char** argv) {
                             if(strcmp(pass, token) == 0){
                                 correcto = 1;
                             }else{
-
+                                correcto = 0;
                             }
                         }
                     }else{
-
+                        correcto = 0;
                     }
                 }while(feof(users) == 0 && !correcto);
 
@@ -122,6 +126,7 @@ int main(int argc, char** argv) {
                         perror("Servidor: error en la llamada a la funcion send (Confirmación LOGIN)"),
                         exit(1);
                     salir = 1;
+                    fclose(users);
                 }else{
                     strcpy(confirmacion, "ERR"); // SI NO ES CORRECTO
                     printf("Login incorrecto.");
@@ -131,29 +136,75 @@ int main(int argc, char** argv) {
                     rewind(users);
                 }
                 
-
+            // SI ESTAMOS INTENTANDO CREAR UN USUARIO
             }else if(strcmp(token, "NEW") == 0){
                 token = strsep(&processing, delimiters);
                 user = token;
                 token = strsep(&processing, delimiters);
                 pass = token;
                 
-                do {
-                    endof =(int) fgets(line, 100, (FILE *) users);
-                    printf("%s %i\n", line, endof);
-                }while(endof != 0);
-
-                strcpy(confirmacion, "OK"); // AÑADIR USUARIO SI ES CORRECTO
-                printf("Creacion correcta. Game Menu");                
-                if(send(socket_datos, confirmacion, 20, 0) == -1)
-                    perror("Servidor: error en la llamada a la funcion send (Confirmacion NEW)"),
+                if ((users = fopen("users.txt","a+")) == NULL){
+                    printf("Error! opening file");
                     exit(1);
-                salir = 1;
+                }
+
+                do {
+                    fgets(line, 100, (FILE *) users);
+
+                    processing = line;
+                    token = strsep(&processing, delimiters);
+                    
+                    if(strcmp(user, token) == 0){
+                        token = strsep(&processing, delimiters);
+                        if(token != 0){
+                            if(feof(users) == 0){
+                                strcat(pass, "\n");
+                            }
+                            if(strcmp(pass, token) == 0){
+                                correcto = 1;
+                            }else{
+                                correcto = 0;
+                            }
+                        }
+                    }else{
+                        correcto = 0;
+                    }
+                }while(feof(users) == 0 && !correcto);
+
+                if(correcto != 1){
+                    strcpy(line, user);
+                    strcat(line, " ");
+                    strcat(line, pass);
+                    strcat(line, "\n");
+                    fprintf(users, "%s", line);
+
+                    strcpy(confirmacion, "OK"); // AÑADIR USUARIO SI ES CORRECTO
+                    printf("Creacion correcta. Game Menu");                
+                    if(send(socket_datos, confirmacion, 20, 0) == -1)
+                        perror("Servidor: error en la llamada a la funcion send (Confirmacion NEW)"),
+                        exit(1);
+                    
+                    salir = 1;
+                    fclose(users); 
+                }else{
+                    strcpy(confirmacion, "ERR"); // AÑADIR USUARIO SI ES CORRECTO
+                    printf("Creacion incorrecta. Game Menu");                
+                    if(send(socket_datos, confirmacion, 20, 0) == -1)
+                        perror("Servidor: error en la llamada a la funcion send (Confirmacion NEW)"),
+                        exit(1);
+
+                    rewind(users);
+                    correcto = 0;
+                }
+
+                
             }else if(strcmp(token, "EXIT") == 0){
                 salir = 1;
             }
             printf("\n");
         }while(!salir);
+
+        // SEGUNDO ESTADO
         salir = 0;
         if(send(socket_datos, gameMenu, 128, 0) == -1)
             perror("Servidor: error en la llamada a la funcion send (gameMenu)"),
