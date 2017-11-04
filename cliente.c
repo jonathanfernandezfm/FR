@@ -75,18 +75,17 @@ int main(int argc, char** argv) {
         printf("Elija una opcion: ");
         gets(option);
         
-        processing = option;
-        token = strsep(&processing, delimiters);
+        token = strtok(option, delimiters);
 
         if(strcmp(token, "LOGIN") == 0){
-            token = strsep(&processing, delimiters); 
-            if(token != 0){
+            token = strtok(NULL, delimiters); 
+            if(token != NULL){
                 user = token;
-                token = strsep(&processing, delimiters);
-                if(token != 0){
+                token = strtok(NULL, delimiters);
+                if(token != NULL){
                     if(strcmp(token, "PASS") == 0){
-                        token = strsep(&processing, delimiters);
-                        if(token != 0){
+                        token = strtok(NULL, delimiters);
+                        if(token != NULL){
                             pass = token;
                             strcpy(buffer, "LOGIN ");
                             strcat(buffer, user);
@@ -116,17 +115,17 @@ int main(int argc, char** argv) {
             }
 
         }else if(strcmp(token, "NEW") == 0){
-            token = strsep(&processing, delimiters);
-            if(token != 0){
+            token = strtok(NULL, delimiters);
+            if(token != NULL){
                 if(strcmp(token, "USER") == 0){
-                    token = strsep(&processing, delimiters);
-                    if(token != 0){
+                    token = strtok(NULL, delimiters);
+                    if(token != NULL){
                         user = token;
-                        token = strsep(&processing, delimiters);
-                        if(token != 0){
+                        token = strtok(NULL, delimiters);
+                        if(token != NULL){
                             if(strcmp(token, "PASS") == 0){
-                                token = strsep(&processing, delimiters);
-                                if(token != 0){
+                                token = strtok(NULL, delimiters);
+                                if(token != NULL){
                                     pass = token;
                                     strcpy(buffer, "NEW ");
                                     strcat(buffer, user);
@@ -182,12 +181,11 @@ int main(int argc, char** argv) {
         printf("Elija una opcion: ");
         gets(option);
         
-        processing = option;
-        token = strsep(&processing, delimiters);
+        token = strtok(option, delimiters);
 
         if(strcmp(token, "GET") == 0){
-            token = strsep(&processing, delimiters);
-            if(token != 0){
+            token = strtok(NULL, delimiters);
+            if(token != NULL){
                 if(strcmp(token, "SCORE") == 0){
                     strcpy(buffer, "SCORE");
                     if(send(socket_datos, buffer, 128, 0) == -1)
@@ -196,8 +194,8 @@ int main(int argc, char** argv) {
                 }
             }
         }else if(strcmp(token, "NEW") == 0){
-            token = strsep(&processing, delimiters);
-            if(token != 0){
+            token = strtok(NULL, delimiters);
+            if(token != NULL){
                 if(strcmp(token, "WORD") == 0){
                     strcpy(buffer, "WORD");
                     if(send(socket_datos, buffer, 128, 0) == -1)

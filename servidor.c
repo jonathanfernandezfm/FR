@@ -26,13 +26,15 @@ int main(int argc, char** argv) {
     char * pass;
     int salir = 0;
     int correcto = 0;
+    int user_score;
 
     FILE *users;
+    FILE *score;
     char line[100];
 
     char delimiters[] = " ";
-    char * processing;
     char * token;
+    char * processing;
 
     if(argc != 2)
         perror("Sintaxis: servidor puerto_servidor"),
@@ -81,14 +83,13 @@ int main(int argc, char** argv) {
                 perror("El cliente se ha desconectado"),
                 exit(1);
 
-            processing = buffer;
-            token = strsep(&processing, delimiters);
+            token = strtok(buffer, delimiters);
             
             // SI ESTAMOS INTENTANDO HACER LOGIN
             if(strcmp(token, "LOGIN") == 0){
-                token = strsep(&processing, delimiters); 
+                token = strtok(NULL, delimiters); 
                 user = token;
-                token = strsep(&processing, delimiters);
+                token = strtok(NULL, delimiters);
                 pass = token;
                 
                 if ((users = fopen("users.txt","r")) == NULL){
@@ -99,12 +100,11 @@ int main(int argc, char** argv) {
                 do {
                     fgets(line, 100, (FILE *) users);
 
-                    processing = line;
-                    token = strsep(&processing, delimiters);
+                    token = strtok(line, delimiters);
                     
                     if(strcmp(user, token) == 0){
-                        token = strsep(&processing, delimiters);
-                        if(token != 0){
+                        token = strtok(NULL, delimiters);
+                        if(token != NULL){
                             if(feof(users) == 0){
                                 strcat(pass, "\n");
                             }
@@ -138,9 +138,9 @@ int main(int argc, char** argv) {
                 
             // SI ESTAMOS INTENTANDO CREAR UN USUARIO
             }else if(strcmp(token, "NEW") == 0){
-                token = strsep(&processing, delimiters);
+                token = strtok(NULL, delimiters);
                 user = token;
-                token = strsep(&processing, delimiters);
+                token = strtok(NULL, delimiters);
                 pass = token;
                 
                 if ((users = fopen("users.txt","a+")) == NULL){
@@ -151,12 +151,11 @@ int main(int argc, char** argv) {
                 do {
                     fgets(line, 100, (FILE *) users);
 
-                    processing = line;
-                    token = strsep(&processing, delimiters);
+                    token = strtok(line, delimiters);
                     
                     if(strcmp(user, token) == 0){
-                        token = strsep(&processing, delimiters);
-                        if(token != 0){
+                        token = strtok(NULL, delimiters);
+                        if(token != NULL){
                             if(feof(users) == 0){
                                 strcat(pass, "\n");
                             }
@@ -211,7 +210,9 @@ int main(int argc, char** argv) {
             exit(1);
 
         do{
-            nbytes = recv(socket_datos, buffer, 128, 0);
+            char buffer2[128];
+            char line2[100];
+            nbytes = recv(socket_datos, buffer2, 128, 0);
             if(nbytes == -1)
                 perror("Servidor: error Recv (Option Selected)"),
                 exit(1);
@@ -219,15 +220,55 @@ int main(int argc, char** argv) {
             if(nbytes == 0)
                 perror("El cliente se ha desconectado."),
                 exit(1);
-        
-            if(strcmp(buffer, "SCORE") == 0){
-                // PROCESO DE MOSTRAR SCORE
+            printf("buffer: %s", buffer2);
+            if(strcmp(buffer2, "SCORE") == 0){                    
+                    if ((score = fopen("score.txt","r")) == NULL){
+                        printf("Error! opening file");
+                        exit(1);
+                    }
+
+                    do {
+                        fgets(line2, 100, (FILE *) score);
+                        printf(" line: %s\n", line2);
+
+                        int p;
+
+                        sscanf (line2,"%s %d",token,&p);
+
+                        printf(" token: %s\n", token);
+                        printf(" user: %s\n", user);
+                        printf(" score: %d\n", p);
+
+                        if(strcmp(user, token) == 0){
+                            user_score = p;
+                            correcto = 1;
+                            printf(" asd : \n");
+                        }else{
+                            correcto = 0;
+                        }
+                    }while(feof(score) == 0 && !correcto);
+    
+                    if(correcto){
+                        sprintf(confirmacion, "%d", user_score); // SI ES CORRECTO
+                        printf("Score: %d", user_score);
+                        //if(send(socket_datos, confirmacion, 20, 0) == -1)
+                          //  perror("Servidor: error en la llamada a la funcion send (Confirmación LOGIN)"),
+                          //  exit(1);
+                        salir = 1;
+                        fclose(score);
+                    }else{
+                        strcpy(confirmacion, "ERR"); // SI NO ES CORRECTO
+                        printf("No existe score para ese usuario");
+                        if(send(socket_datos, confirmacion, 20, 0) == -1)
+                            perror("Servidor: error en la llamada a la funcion send (Confirmación LOGIN)"),
+                            exit(1);
+                        rewind(score);
+                    }
             }else if(strcmp(buffer, "WORD") == 0){
                 // PROCESO DE DEVOLVER PALABRA
             }
+            printf("ASD\n");
             
-            
-            printf("%s\n", buffer);
         }while(!salir);
 
         close(socket_datos);
