@@ -102,12 +102,10 @@ public class Cliente {
 
                                             }while(!opcionMenuValida(opcionSelec));
                                                                                
-                                            // Enviamos la opcion seleccionada en el MENU 1
+                                            // Enviamos la opcion seleccionada en el MENU 2
                                             if(opcionSelec == 1 || opcionSelec == 2){
                                                 // Enviamos la opcion seleccionada por el buffer
                                                 outPrinter.writeInt(opcionSelec);
-                                                //Recibimos el mensaje de respuesta
-                                                cadenaRecibida = inReader.readUTF();
                                                 
                                                 // SCORE
                                                 if(opcionSelec == 1){
@@ -231,7 +229,6 @@ public class Cliente {
                     // Recibimos el menu 2
                     menu2 = inReader.readUTF();
                     menu2 = "\n"+menu2;
-                    
                      
                 }
                 else{
@@ -252,6 +249,7 @@ public class Cliente {
             // Imprimimos el score
             System.out.println(cadenaRecibida);
         }
+        
         public static void jugar() throws IOException{
             boolean adivinada = false;
             // Recibimos la palabra            

@@ -40,7 +40,7 @@ public class Procesador extends Thread{
         boolean exitMenu2 = false;
 	
         
-        String menu1 = "**********************\n (1) NEW USER\n (2) LOGIN\n (3) EXIT\n**********************\n";
+        String menu1 = "TRADUCE PALABRAS ENG-ESP\n\n**********************\n (1) NEW USER\n (2) LOGIN\n (3) EXIT\n**********************\n";
         String menu2 = "**********************\n (1) GET SCORE\n (2) NEW WORD\n (3) EXIT\n**********************\n";
 	
 	// Constructor que tiene como parámetro una referencia al socket abierto en por otra clase
@@ -132,15 +132,13 @@ public class Procesador extends Thread{
                                                     case 1:
                                                         posicion[0] = -1;
                                                         if(existeUsuarioScore(nombre, posicion)){
-                                                            // Enviamos por el buffer que el usuario existe
-                                                            outPrinter.writeUTF("OK");
-                                                            
+                                                            // Obtenemos el escore
                                                             int score = Integer.parseInt(obtenerScore(posicion));
                                                             
+                                                            // Mandamos el score
                                                             outPrinter.writeUTF("El score de " + nombre + " es: " + score);
                                                         }
                                                         else{
-                                                            outPrinter.writeUTF("ERROR");
                                                             outPrinter.writeUTF("ERROR! El usuario " + nombre + " no tiene score!\n");
                                                         }
                                                     break;
@@ -150,6 +148,7 @@ public class Procesador extends Thread{
                                                     break;
                                                     case 3:
                                                         exitMenu2 = true;
+                                                        exitMenu1 = true;
                                                     break;
                                                 }
                                             }while(!exitMenu2);
