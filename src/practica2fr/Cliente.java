@@ -64,7 +64,7 @@ public class Cliente {
                                     in.next();
                                 }  
 
-                            }while(!opcionMenu1Valida(opcionSelec));
+                            }while(!opcionMenuValida(opcionSelec));
                             
                             // Limpiamos el terminal
                             limpiarVentana();
@@ -81,9 +81,47 @@ public class Cliente {
                                     opcionNewUser();
                                 }
                                 else{ // LOGIN USER
-                                    if(opcionLoginUser()){
+                                    if(opcionLoginUser()){                                        
                                         do{
-                                            // SEGUIR CON NIVEL 2
+                                            // Recogemos por terminal la opcion deseada del MENU 2
+                                            do{
+                                                System.out.println(menu2);
+                                                
+                                                try {
+                                                    System.out.print("Introduzca una opcion: ");
+                                                        opcionSelec = in.nextInt();
+
+                                                } catch (InputMismatchException e) {
+                                                    // Limpiamos la ventana
+                                                    limpiarVentana();
+                                                    System.out.println("\n\nERROR! Debes insertar un número");
+                                                    in.next();
+                                                }
+
+                                                limpiarVentana();
+
+                                            }while(!opcionMenuValida(opcionSelec));
+                                                                               
+                                            // Enviamos la opcion seleccionada en el MENU 1
+                                            if(opcionSelec == 1 || opcionSelec == 2){
+                                                // Enviamos la opcion seleccionada por el buffer
+                                                outPrinter.writeInt(opcionSelec);
+                                                //Recibimos el mensaje de respuesta
+                                                cadenaRecibida = inReader.readUTF();
+                                                
+                                                // SCORE
+                                                if(opcionSelec == 1){
+                                                    opcionScore();
+                                                }
+                                                else{ // GET WORD
+                                                    
+                                                }
+                                            }
+                                            else{
+                                                outPrinter.writeInt(opcionSelec);
+                                                exitMenu2 = true;
+                                            }
+                                            
                                         }while(!exitMenu2);
                                     }
                                     else{
@@ -95,7 +133,7 @@ public class Cliente {
                                 outPrinter.writeInt(opcionSelec);
                                 exitMenu1 = true;
                             }                         
-                        }while(!exitMenu1);
+                        }while(!exitMenu1 && !exitMenu2);
                               
                         System.out.println("Hasta luego :)");
                         
@@ -112,7 +150,7 @@ public class Cliente {
 	}
         
         // Controla la opcion seleccionada del menu 1
-        public static boolean opcionMenu1Valida(int opcionSelec){
+        public static boolean opcionMenuValida(int opcionSelec){
             return (opcionSelec == 1 || opcionSelec == 2 || opcionSelec == 3);
         }
         
@@ -194,9 +232,6 @@ public class Cliente {
                     menu2 = inReader.readUTF();
                     menu2 = "\n"+menu2;
                     
-                    // Mostramos el menu 2
-                    System.out.println(menu2);      // CAMBIAR A ARRIBA
-                    
                      
                 }
                 else{
@@ -209,5 +244,12 @@ public class Cliente {
                 System.out.println(cadenaRecibida);
             }
             return logueadoCorrectamente;
+        }
+        
+        public static void opcionScore() throws IOException{
+            // Recibimos el score
+            cadenaRecibida = inReader.readUTF();
+            // Imprimimos el score
+            System.out.println(cadenaRecibida);
         }
 }

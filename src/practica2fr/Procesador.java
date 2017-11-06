@@ -21,6 +21,7 @@ public class Procesador extends Thread{
         
         File usuarios = null;
         File passwords = null;
+        File score = null;
         FileReader fr = null;
         BufferedReader bufferLecturaFichero = null;
         FileWriter fw = null;
@@ -28,8 +29,10 @@ public class Procesador extends Thread{
         
         String cadenaLeidaFichero;
         String cadenaRecibida;
+        String nombre;
         int opcionRecibida;
         boolean exitMenu1 = false;
+        boolean exitMenu2 = false;
 	
         
         String menu1 = "**********************\n (1) NEW USER\n (2) LOGIN\n (3) EXIT\n**********************\n";
@@ -64,7 +67,7 @@ public class Procesador extends Thread{
                                     cadenaRecibida = inReader.readUTF();
                                     if(insertarNuevoUsuario(cadenaRecibida)){
                                         // Guardamos el nombre de usuario para luego mostrarlo
-                                        String nombre = cadenaRecibida;
+                                        String nuevoNombre = cadenaRecibida;
                                         
                                         // Enviamos por el buffer que el usuario se ha creado correctamente
                                         outPrinter.writeUTF("OK");
@@ -98,7 +101,7 @@ public class Procesador extends Thread{
                                     //Comprobamos si existe y...
                                     if(existeUsuario(cadenaRecibida, posicion)){
                                         // Guardamos el nombre de usuario para luego mostrarlo
-                                        String nombre = cadenaRecibida;                                        
+                                        nombre = cadenaRecibida;                                        
                                         
                                         // Enviamos por el buffer que el usuario existe
                                         outPrinter.writeUTF("OK");
@@ -116,6 +119,33 @@ public class Procesador extends Thread{
                                             
                                             // Enviamos el MENU 2
                                             outPrinter.writeUTF(menu2);
+                                            
+                                            do{
+                                                opcionRecibida = inReader.readInt();
+                                                System.out.print("menu 2");
+                                                // Miramos la opcion recibida
+                                                switch(opcionRecibida){
+                                                    case 1:
+                                                        posicion[0] = -1;
+                                                        if(existeUsuarioScore(nombre, posicion)){
+                                                            // Enviamos por el buffer que el usuario existe
+                                                            outPrinter.writeUTF("OK");
+                                                            
+                                                            int score = Integer.parseInt(obtenerScore(posicion));
+                                                            
+                                                            outPrinter.writeUTF("El score de " + nombre + " es: " + score);
+                                                        }
+                                                        else{
+                                                            outPrinter.writeUTF("ERROR");
+                                                            outPrinter.writeUTF("ERROR! El usuario " + nombre + " no tiene score!\n");
+                                                        }
+                                                    break;
+                                                    case 2:
+                                                    case 3:
+                                                        exitMenu2 = true;
+                                                    break;
+                                                }
+                                            }while(!exitMenu2);
                                         }
                                         else{
                                             outPrinter.writeUTF("ERROR! La contraseña no coincide!");
@@ -257,6 +287,47 @@ public class Procesador extends Thread{
             return existe;
         }
         
+        // Comprueba si un usuario con score existe
+        public boolean existeUsuarioScore(String nombreUsuario, int[] posicion){
+            boolean existe = false;
+            try{
+                // Abrimos el fichero
+                usuarios = new File(System.getProperty("user.dir")+"/src/practica2fr/user_score.txt");
+                fr = new FileReader (usuarios);
+                bufferLecturaFichero = new BufferedReader(fr);
+                
+                // Leemos todos los usuarios que haya en el fichero
+                String linea;
+                int i = 0;
+                while((linea=bufferLecturaFichero.readLine())!=null && !existe){
+                    if(linea.equals(nombreUsuario))
+                        existe = true;
+                    else
+                        i++;
+                }
+                
+                if(existe)
+                    posicion[0] = i;
+                
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }finally{
+                // En el finally cerramos el fichero, para asegurarnos
+                // que se cierra tanto si todo va bien como si salta 
+                // una excepcion.
+                try{                    
+                   if( null != fr ){   
+                      fr.close();
+                   }
+                }catch (Exception e2){ 
+                   e2.printStackTrace();
+                }
+             }
+            
+            return existe;
+        }
+        
         // Comprueba si la password pasada coincide con la del fichero passwords.txt en la posicion pos
         public boolean coincidenPasswords(String passwordUsuario, int[] pos){
             boolean coinciden = false;
@@ -295,5 +366,38 @@ public class Procesador extends Thread{
              }
             
             return coinciden;
+        }
+        public String obtenerScore(int[] pos){
+            String linea = new String();
+            try{
+                // Abrimos el fichero
+                score = new File(System.getProperty("user.dir")+"/src/practica2fr/score.txt");
+                fr = new FileReader (score);
+                bufferLecturaFichero = new BufferedReader(fr);
+                
+                // Leemos hasta la posicion de la password
+                linea = bufferLecturaFichero.readLine();
+                int i = 0;
+                while(i != pos[0]){
+                    linea = bufferLecturaFichero.readLine();
+                    i++;
+                }
+
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }finally{
+                // En el finally cerramos el fichero, para asegurarnos
+                // que se cierra tanto si todo va bien como si salta 
+                // una excepcion.
+                try{                    
+                   if( null != fr ){   
+                      fr.close();
+                   }
+                }catch (Exception e2){ 
+                   e2.printStackTrace();
+                }
+             }
+            return linea;
         }
 }
