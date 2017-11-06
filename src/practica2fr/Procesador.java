@@ -9,6 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Random;
 
 public class Procesador extends Thread{
 	// Referencia a un socket para enviar/recibir las peticiones/respuestas
@@ -22,6 +23,8 @@ public class Procesador extends Thread{
         File usuarios = null;
         File passwords = null;
         File score = null;
+        File palabras = null;
+        File traduccion = null;
         FileReader fr = null;
         BufferedReader bufferLecturaFichero = null;
         FileWriter fw = null;
@@ -31,6 +34,8 @@ public class Procesador extends Thread{
         String cadenaRecibida;
         String nombre;
         int opcionRecibida;
+        int racha = 1;
+        int scoreObtenido;
         boolean exitMenu1 = false;
         boolean exitMenu2 = false;
 	
@@ -122,7 +127,6 @@ public class Procesador extends Thread{
                                             
                                             do{
                                                 opcionRecibida = inReader.readInt();
-                                                System.out.print("menu 2");
                                                 // Miramos la opcion recibida
                                                 switch(opcionRecibida){
                                                     case 1:
@@ -141,6 +145,9 @@ public class Procesador extends Thread{
                                                         }
                                                     break;
                                                     case 2:
+                                                        System.out.print("entrando jugar");
+                                                        jugar();
+                                                    break;
                                                     case 3:
                                                         exitMenu2 = true;
                                                     break;
@@ -399,5 +406,79 @@ public class Procesador extends Thread{
                 }
              }
             return linea;
+        }
+        
+        public String obtenerPalabra(int[] posPalabra){
+            String palabra = new String();
+            Random rand = new Random();
+            int n = rand.nextInt(7);
+            
+            try{
+                // Abrimos el fichero
+                palabras = new File(System.getProperty("user.dir")+"/src/practica2fr/palabras.txt");
+                fr = new FileReader (palabras);
+                bufferLecturaFichero = new BufferedReader(fr);
+                
+                // Leemos hasta la posicion de la password
+                palabra = bufferLecturaFichero.readLine();
+                int i = 0;
+                while(i != n){
+                    palabra = bufferLecturaFichero.readLine();
+                    i++;
+                }
+                posPalabra[0]=n;
+
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }finally{
+                // En el finally cerramos el fichero, para asegurarnos
+                // que se cierra tanto si todo va bien como si salta 
+                // una excepcion.
+                try{                    
+                   if( null != fr ){   
+                      fr.close();
+                   }
+                }catch (Exception e2){ 
+                   e2.printStackTrace();
+                }
+             }
+            return palabra;
+        }
+        public void jugar() throws IOException{
+            String palabra = new String();
+            int[] posPalabra = new int[1];
+            posPalabra[0]=-1;
+
+            palabra = obtenerPalabra(posPalabra);
+
+            outPrinter.writeUTF("La palabra a traducir es: " + palabra);
+
+            int i=10;
+            boolean adivinada = false;
+            while(i != 0 && adivinada){
+                cadenaRecibida = inReader.readUTF();
+                if(palabra.equals(cadenaRecibida)){
+                    adivinada=true;
+                    racha +=1;
+                    scoreObtenido = (10 + racha) * i;
+                    outPrinter.writeUTF("OK");
+                    outPrinter.writeUTF("Correcto!! Sumas " + scoreObtenido + " puntos");
+                }
+                else{
+                    if(i!=1){
+                        outPrinter.writeUTF("ERR");
+                        outPrinter.writeUTF("Erroneo\n");
+                        i--;
+                        racha = 1;
+                    }
+                    else{
+                        outPrinter.writeUTF("END");
+                        outPrinter.writeUTF("Te quedaste sin oportunidades");
+                        i--;
+                        racha = 1;
+                    }
+                }
+            }
         }
 }

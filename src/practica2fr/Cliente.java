@@ -114,7 +114,7 @@ public class Cliente {
                                                     opcionScore();
                                                 }
                                                 else{ // GET WORD
-                                                    
+                                                    jugar();
                                                 }
                                             }
                                             else{
@@ -251,5 +251,39 @@ public class Cliente {
             cadenaRecibida = inReader.readUTF();
             // Imprimimos el score
             System.out.println(cadenaRecibida);
+        }
+        public static void jugar() throws IOException{
+            boolean adivinada = false;
+            // Recibimos la palabra            
+            System.out.print(cadenaRecibida);
+            do{
+                System.out.println("\nEscribe la traduccion: ");
+                // Leemos la respuesta
+                cadenaEnviada = in.next();
+                System.out.println(cadenaEnviada);
+                // Enviamos la respuesta
+                outPrinter.writeUTF(cadenaEnviada);
+                
+                // Recibimos confirmacion
+                cadenaRecibida = inReader.readUTF();
+                if("OK".equals(cadenaRecibida)){
+                    cadenaRecibida = inReader.readUTF();
+                    System.out.print(cadenaRecibida);
+                    adivinada = true;
+                }
+                else{
+                    if("ERR".equals(cadenaRecibida)){
+                        cadenaRecibida = inReader.readUTF();
+                        System.out.print(cadenaRecibida);
+                    }
+                    else{
+                        cadenaRecibida = inReader.readUTF();
+                        System.out.print(cadenaRecibida);
+                    }
+
+                }
+            }while(!adivinada);
+
+            
         }
 }
