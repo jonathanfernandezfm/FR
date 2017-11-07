@@ -14,10 +14,12 @@ public class Cliente {
         static String cadenaEnviada;
         static String menu1 = new String();
         static String menu2 = new String();
+        static String menu3 = new String();
         static String cadenaRecibida;
         static int opcionSelec = -1;
         static boolean exitMenu1 = false;
         static boolean exitMenu2 = false;
+        static boolean exitMenu3 = false;
         static DataInputStream inReader = null;
         static DataOutputStream outPrinter = null;
     
@@ -112,7 +114,16 @@ public class Cliente {
                                                     opcionScore();
                                                 }
                                                 else{ // GET WORD
-                                                    jugar();
+                                                    // Recogemos el MENU 3
+                                                    menu3 = inReader.readUTF();
+                                                    menu3 = "\n"+menu3;
+                                                    
+                                                    do{
+                                                        // Mostramos el menu 3
+                                                        System.out.println(menu3);
+                                                        jugar();
+                                                    }while(!exitMenu3);
+                                                    limpiarVentana();
                                                 }
                                             }
                                             else{
@@ -180,6 +191,8 @@ public class Cliente {
                 // Enviamos la constraseña del usuario
                 outPrinter.writeUTF(cadenaEnviada);
 
+                limpiarVentana();
+                
                 // Mostramos que todo se ha realizado correctamente
                 System.out.println("Usuario + Password creado correctamente");
 
@@ -251,37 +264,25 @@ public class Cliente {
         }
         
         public static void jugar() throws IOException{
-            boolean adivinada = false;
-            // Recibimos la palabra            
-            System.out.print(cadenaRecibida);
-            do{
-                System.out.println("\nEscribe la traduccion: ");
-                // Leemos la respuesta
-                cadenaEnviada = in.next();
-                System.out.println(cadenaEnviada);
-                // Enviamos la respuesta
-                outPrinter.writeUTF(cadenaEnviada);
-                
-                // Recibimos confirmacion
-                cadenaRecibida = inReader.readUTF();
-                if("OK".equals(cadenaRecibida)){
-                    cadenaRecibida = inReader.readUTF();
-                    System.out.print(cadenaRecibida);
-                    adivinada = true;
-                }
-                else{
-                    if("ERR".equals(cadenaRecibida)){
-                        cadenaRecibida = inReader.readUTF();
-                        System.out.print(cadenaRecibida);
-                    }
-                    else{
-                        cadenaRecibida = inReader.readUTF();
-                        System.out.print(cadenaRecibida);
-                    }
-
-                }
-            }while(!adivinada);
-
+            exitMenu3 = false;
+            // Obtenemos la palabra a traducir y la mostramos
+            cadenaRecibida = inReader.readUTF();   
+            System.out.println(cadenaRecibida + "\n");
+            
+            // Enviamos la opcion marcada o la traduccion
+            System.out.print("Introduce la traduccion o una opcion: ");
+            cadenaEnviada = in.next();
+            outPrinter.writeUTF(cadenaEnviada);
+            
+            // Esperamos la respuesta
+            cadenaRecibida = inReader.readUTF();
+            
+            if("BACK".equals(cadenaRecibida))
+                exitMenu3 = true;
+            else{
+                limpiarVentana();
+                System.out.println(cadenaRecibida);
+            }
             
         }
 }

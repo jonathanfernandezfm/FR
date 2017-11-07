@@ -19,12 +19,14 @@ public class Procesador extends Thread{
 	// stream de escritura (por aquí se envía los datos al cliente)
 	private DataInputStream inReader;
         
+        private Random random;
+        
         
         File usuarios = null;
         File passwords = null;
         File score = null;
         File palabras = null;
-        File traduccion = null;
+        File traducciones = null;
         FileReader fr = null;
         BufferedReader bufferLecturaFichero = null;
         FileWriter fw = null;
@@ -32,20 +34,28 @@ public class Procesador extends Thread{
         
         String cadenaLeidaFichero;
         String cadenaRecibida;
-        String nombre;
+        String nombreJugador;
+        String palabraATraducir;
+        int[] posJugador = new int[1]; // Indica la posicion de jugador en el fichero users.txt
+        int[] posPalabra = new int[1]; // Indica la posicion de la palabra en el fichero palabras.txt
+        boolean generarNuevaPalabra = true;
+        boolean seguirJugando;
         int opcionRecibida;
         int racha = 1;
         int scoreObtenido;
         boolean exitMenu1 = false;
         boolean exitMenu2 = false;
+        boolean exitMenu3 = false;
 	
         
-        String menu1 = "TRADUCE PALABRAS ENG-ESP\n\n**********************\n (1) NEW USER\n (2) LOGIN\n (3) EXIT\n**********************\n";
-        String menu2 = "**********************\n (1) GET SCORE\n (2) NEW WORD\n (3) EXIT\n**********************\n";
+        String menu1 = "TRADUCE PALABRAS ENG-ESP\n\n   MENU PRINCIPAL\n**********************\n (1) NEW USER\n (2) LOGIN\n (3) EXIT\n**********************\n";
+        String menu2 = "   MENU JUEGO\n**********************\n (1) GET SCORE\n (2) NEW WORD\n (3) EXIT\n**********************\n";
+        String menu3 = "**********************\n (1) NEW WORD\n (2) RESOLVE\n (3) BACK\n**********************\n";
 	
 	// Constructor que tiene como parámetro una referencia al socket abierto en por otra clase
 	public Procesador(Socket socketServicio) {
 		this.socketServicio=socketServicio;
+                random=new Random();
 	}
 	
 	
@@ -72,7 +82,7 @@ public class Procesador extends Thread{
                                     cadenaRecibida = inReader.readUTF();
                                     if(insertarNuevoUsuario(cadenaRecibida)){
                                         // Guardamos el nombre de usuario para luego mostrarlo
-                                        String nuevoNombre = cadenaRecibida;
+                                        nombreJugador = cadenaRecibida;
                                         
                                         // Enviamos por el buffer que el usuario se ha creado correctamente
                                         outPrinter.writeUTF("OK");
@@ -87,7 +97,7 @@ public class Procesador extends Thread{
                                         insertarNuevaPassword(cadenaRecibida);
 
                                         // Mostramos que todo ha ido bien
-                                        System.out.println("Usuario " + nombre + " creado correctamente");
+                                        System.out.println("Usuario " + nombreJugador + " creado correctamente");
                                     }
                                     else{
                                         outPrinter.writeUTF("ERROR! Ese nombre de usuario ya existe!");
@@ -100,17 +110,17 @@ public class Procesador extends Thread{
                                     // Leemos el nombre del nuevo usuario
                                     cadenaRecibida = inReader.readUTF();
                                     
-                                    // Indica la posicion del nombre de usuario (-1 si no existe)
-                                    int[] posicion = new int[1];
-                                    posicion[0] = -1;
+                                    
+                                    // Indica la posicion del nombre de usuario (-1 si no existe) en el fichero users.txt
+                                    posJugador[0] = -1;
                                     //Comprobamos si existe y...
-                                    if(existeUsuario(cadenaRecibida, posicion)){
-                                        // Guardamos el nombre de usuario para luego mostrarlo
-                                        nombre = cadenaRecibida;                                        
+                                    if(existeUsuario(cadenaRecibida, posJugador)){
+                                        // Guardamos el nombre de usuario 
+                                        nombreJugador = cadenaRecibida;                                        
                                         
                                         // Enviamos por el buffer que el usuario existe
                                         outPrinter.writeUTF("OK");
-                                        
+
                                         // Enviamos la solicitud de contraseña de usuario
                                         outPrinter.writeUTF("Contraseña: ");
                                         
@@ -118,7 +128,7 @@ public class Procesador extends Thread{
                                         cadenaRecibida = inReader.readUTF();
                                         
                                         // Comprobamos que la contraseña coincide
-                                        if(coincidenPasswords(cadenaRecibida, posicion)){
+                                        if(coincidenPasswords(cadenaRecibida, posJugador)){
                                             // Enviamos por el buffer que el usuario existe
                                             outPrinter.writeUTF("OK");
                                             
@@ -126,25 +136,28 @@ public class Procesador extends Thread{
                                             outPrinter.writeUTF(menu2);
                                             
                                             do{
+                                                exitMenu3 = false;
                                                 opcionRecibida = inReader.readInt();
                                                 // Miramos la opcion recibida
                                                 switch(opcionRecibida){
                                                     case 1:
-                                                        posicion[0] = -1;
-                                                        if(existeUsuarioScore(nombre, posicion)){
-                                                            // Obtenemos el escore
-                                                            int score = Integer.parseInt(obtenerScore(posicion));
-                                                            
-                                                            // Mandamos el score
-                                                            outPrinter.writeUTF("El score de " + nombre + " es: " + score);
-                                                        }
-                                                        else{
-                                                            outPrinter.writeUTF("ERROR! El usuario " + nombre + " no tiene score!\n");
-                                                        }
+                                                        // Obtenemos el escore
+                                                        int score = Integer.parseInt(obtenerScore(posJugador));
+
+                                                        // Mandamos el score
+                                                        outPrinter.writeUTF("El score de " + nombreJugador + " es: " + score);
                                                     break;
                                                     case 2:
-                                                        System.out.print("entrando jugar");
-                                                        jugar();
+                                                        // Enviar el menu 3
+                                                        outPrinter.writeUTF(menu3);
+                                                        
+                                                        scoreObtenido = 10;
+                                                        
+                                                        do{
+                                                            seguirJugando = jugar();
+                                                            if(!seguirJugando)
+                                                                exitMenu3 = true;
+                                                        }while(!exitMenu3);
                                                     break;
                                                     case 3:
                                                         exitMenu2 = true;
@@ -203,6 +216,12 @@ public class Procesador extends Thread{
                     
                     // Insertamos el nuevo nombre
                     bufferEscrituraFichero.println(nombreUsuario);
+                    
+                    // Insertamos score a 0
+                    fw = new FileWriter(System.getProperty("user.dir")+"/src/practica2fr/score.txt",true);
+                    bufferEscrituraFichero = new PrintWriter(fw,true);
+                    bufferEscrituraFichero.println("0");
+                    
                     insertado = true;
                 }
             }
@@ -293,47 +312,6 @@ public class Procesador extends Thread{
             return existe;
         }
         
-        // Comprueba si un usuario con score existe
-        public boolean existeUsuarioScore(String nombreUsuario, int[] posicion){
-            boolean existe = false;
-            try{
-                // Abrimos el fichero
-                usuarios = new File(System.getProperty("user.dir")+"/src/practica2fr/user_score.txt");
-                fr = new FileReader (usuarios);
-                bufferLecturaFichero = new BufferedReader(fr);
-                
-                // Leemos todos los usuarios que haya en el fichero
-                String linea;
-                int i = 0;
-                while((linea=bufferLecturaFichero.readLine())!=null && !existe){
-                    if(linea.equals(nombreUsuario))
-                        existe = true;
-                    else
-                        i++;
-                }
-                
-                if(existe)
-                    posicion[0] = i;
-                
-            }
-            catch(Exception e){
-                e.printStackTrace();
-            }finally{
-                // En el finally cerramos el fichero, para asegurarnos
-                // que se cierra tanto si todo va bien como si salta 
-                // una excepcion.
-                try{                    
-                   if( null != fr ){   
-                      fr.close();
-                   }
-                }catch (Exception e2){ 
-                   e2.printStackTrace();
-                }
-             }
-            
-            return existe;
-        }
-        
         // Comprueba si la password pasada coincide con la del fichero passwords.txt en la posicion pos
         public boolean coincidenPasswords(String passwordUsuario, int[] pos){
             boolean coinciden = false;
@@ -373,6 +351,8 @@ public class Procesador extends Thread{
             
             return coinciden;
         }
+        
+        // Devuelve el score del jugador del fichero score.txt del jugador en la posicion pos del fichero users.txt
         public String obtenerScore(int[] pos){
             String linea = new String();
             try{
@@ -407,10 +387,10 @@ public class Procesador extends Thread{
             return linea;
         }
         
+        // Devuelve la palabra en la posicion posPalabra del fichero palabras.txt
         public String obtenerPalabra(int[] posPalabra){
             String palabra = new String();
-            Random rand = new Random();
-            int n = rand.nextInt(7);
+            int n = random.nextInt(getNumPalabras());
             
             try{
                 // Abrimos el fichero
@@ -418,7 +398,7 @@ public class Procesador extends Thread{
                 fr = new FileReader (palabras);
                 bufferLecturaFichero = new BufferedReader(fr);
                 
-                // Leemos hasta la posicion de la password
+                // Leemos hasta la posicion calculada aleatoriamente
                 palabra = bufferLecturaFichero.readLine();
                 int i = 0;
                 while(i != n){
@@ -444,40 +424,188 @@ public class Procesador extends Thread{
              }
             return palabra;
         }
-        public void jugar() throws IOException{
-            String palabra = new String();
-            int[] posPalabra = new int[1];
-            posPalabra[0]=-1;
+        
+        // Devuelve el numero de palabras del fichero palabras.txt
+        public int getNumPalabras(){
+            int numPalabras = 0;
+            try{
+                // Abrimos el fichero de palabras
+                palabras = new File(System.getProperty("user.dir")+"/src/practica2fr/palabras.txt");
+                fr = new FileReader (palabras);
+                bufferLecturaFichero = new BufferedReader(fr);
+                
+                // Leemos todas las palabras
+                String linea;
+                while((linea=bufferLecturaFichero.readLine())!=null){
+                    numPalabras++;
+                }
+                
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }finally{
+                // En el finally cerramos el fichero, para asegurarnos
+                // que se cierra tanto si todo va bien como si salta 
+                // una excepcion.
+                try{                    
+                   if( null != fr ){   
+                      fr.close();
+                   }
+                }catch (Exception e2){ 
+                   e2.printStackTrace();
+                }
+             }
+            return numPalabras;
+        }
+        
+        // Metodo para obtener la traduccion en la posicion posPalabra del fichero traducciones
+        public String obtenerTraduccion(int[] posPalabra){
+            String traduccion = new String();
+            
+            try{
+                // Abrimos el fichero
+                traducciones = new File(System.getProperty("user.dir")+"/src/practica2fr/traducciones.txt");
+                fr = new FileReader (traducciones);
+                bufferLecturaFichero = new BufferedReader(fr);
+                
+                // Leemos hasta la posicion pasada
+                traduccion = bufferLecturaFichero.readLine();
+                int i = 0;
+                while(i != posPalabra[0]){
+                    traduccion = bufferLecturaFichero.readLine();
+                    i++;
+                }
 
-            palabra = obtenerPalabra(posPalabra);
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }finally{
+                // En el finally cerramos el fichero, para asegurarnos
+                // que se cierra tanto si todo va bien como si salta 
+                // una excepcion.
+                try{                    
+                   if( null != fr ){   
+                      fr.close();
+                   }
+                }catch (Exception e2){ 
+                   e2.printStackTrace();
+                }
+             }
+            return traduccion;
+        }
+        
+        // Actualiza el score de un jugador en el fichero score.txt
+        public void actualizarScore(int[] posJugador, int nuevoScore) throws IOException{
+            try{
+                String contenido = "";
+                
+                // Abrimos el fichero
+                score = new File(System.getProperty("user.dir")+"/src/practica2fr/score.txt");
+                fr = new FileReader (score);
+                bufferLecturaFichero = new BufferedReader(fr);
+                
+                // Leemos todos los scores almacenados
+                String linea;
+                int i = 0;
+                while((linea=bufferLecturaFichero.readLine())!=null){
+                    if(i == posJugador[0])
+                        contenido += Integer.toString(nuevoScore)+"\n";
+                    else
+                        contenido += linea+"\n";
+                    i++;
+                }
+                
+                // Actualizamos el fichero score.txt con el nuevo contenido
 
-            outPrinter.writeUTF("La palabra a traducir es: " + palabra);
-
-            int i=10;
-            boolean adivinada = false;
-            while(i != 0 && adivinada){
-                cadenaRecibida = inReader.readUTF();
-                if(palabra.equals(cadenaRecibida)){
-                    adivinada=true;
-                    racha +=1;
-                    scoreObtenido = (10 + racha) * i;
-                    outPrinter.writeUTF("OK");
-                    outPrinter.writeUTF("Correcto!! Sumas " + scoreObtenido + " puntos");
+                fw = new FileWriter(System.getProperty("user.dir")+"/src/practica2fr/score.txt");
+                bufferEscrituraFichero = new PrintWriter(fw,true);
+                    
+                // Insertamos el nuevo contenido
+                bufferEscrituraFichero.print(contenido);
+                    
+            }
+            catch(Exception e){
+                e.printStackTrace();
+            }finally{
+                // En el finally cerramos el fichero, para asegurarnos
+                // que se cierra tanto si todo va bien como si salta 
+                // una excepcion.
+                try{                    
+                   if( null != fr ){   
+                      fr.close();
+                   }
+                   if( null != fw ){   
+                      fw.close();
+                   }             
+                }catch (Exception e2){ 
+                   e2.printStackTrace();
+                }
+             }
+        }
+        
+        // Metodo para jugar
+        public boolean jugar() throws IOException{
+            boolean seguirJug = true;
+            
+            if(generarNuevaPalabra){
+                // Escogemos aleatoriamente la palabra a traducir
+                palabraATraducir = obtenerPalabra(posPalabra);
+                generarNuevaPalabra = false;
+            }
+            
+            // Enviamos la palabra a traducir
+            outPrinter.writeUTF("\nPalabra a traducir --> " + palabraATraducir);
+            
+            // Esperamos la traduccion o una opcion
+            cadenaRecibida = inReader.readUTF();
+            
+            // Obtenemos la traduccion
+            String traduccion = obtenerTraduccion(posPalabra);
+            
+            // NEW WORD
+            if("1".equals(cadenaRecibida)){
+                generarNuevaPalabra = true;
+                outPrinter.writeUTF("\nGenerada nueva palabra a traducir");
+            }
+            else if("2".equals(cadenaRecibida)){ // RESOLVE
+                // Enviamos la traduccion
+                outPrinter.writeUTF("La traduccion de " + palabraATraducir + " es: " + traduccion +"\n\nGenerada nueva palabra a traducir");
+                generarNuevaPalabra = true;
+            }
+            else if("3".equals(cadenaRecibida)){ // BACK
+                // Enviamos el mensaje de volver al menu 2
+                outPrinter.writeUTF("BACK");
+                
+                generarNuevaPalabra = true;
+                seguirJug = false;
+            }
+            else{ // TRADUCCION ENVIADA
+                if(traduccion.equals(cadenaRecibida)){
+                    // Incrementamos score en scoreObtenido
+                    int nuevoScore = Integer.parseInt(obtenerScore(posJugador)) + scoreObtenido;
+                    actualizarScore(posJugador,nuevoScore);
+                    
+                    // Enviamos mensaje de exito
+                    outPrinter.writeUTF("CORRECTO la traduccion de la palabra " + palabraATraducir + " es " + traduccion + "\n\nHas obtenido " + scoreObtenido + " puntos\n\nGenerada nueva palabra a traducir");
+                    scoreObtenido = 10;
+                    generarNuevaPalabra = true;
                 }
                 else{
-                    if(i!=1){
-                        outPrinter.writeUTF("ERR");
-                        outPrinter.writeUTF("Erroneo\n");
-                        i--;
-                        racha = 1;
+                    scoreObtenido -= 2;
+                    if(scoreObtenido > 0){
+                        // Enviamos mensaje de error
+                        outPrinter.writeUTF("TRADUCCION INCORRECTA. Te quedan " + scoreObtenido/2 + " intentos");
                     }
                     else{
-                        outPrinter.writeUTF("END");
-                        outPrinter.writeUTF("Te quedaste sin oportunidades");
-                        i--;
-                        racha = 1;
+                        scoreObtenido = 10;
+                        generarNuevaPalabra = true;
+                        // Enviamos mensaje de error
+                        outPrinter.writeUTF("TRADUCCION INCORRECTA. Has agotado el numero de intentos\n\nGenerada nueva palabra a traducir");
                     }
                 }
             }
+                
+            return seguirJug;
         }
+        
 }

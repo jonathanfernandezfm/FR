@@ -1,7 +1,0 @@
-coche
-moto
-casa
-dedo
-ruido
-trabajar
-bailar

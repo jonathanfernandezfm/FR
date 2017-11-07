@@ -1,7 +1,0 @@
-car
-bike
-house
-finger
-noise
-work
-dance

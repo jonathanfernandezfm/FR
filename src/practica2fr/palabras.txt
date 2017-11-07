@@ -1,7 +1,11 @@
 car
-bike
+water
 house
 finger
 noise
 work
 dance
+computer
+tree
+light
+phone
